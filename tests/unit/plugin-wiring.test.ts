@@ -58,3 +58,19 @@ test("the TUI entrypoint cancels in-flight work on cleanup", () => {
   assert.match(tui, /createRefresher/)
   assert.match(tui, /bag\.add\(refresher\.dispose\)/)
 })
+
+test("the TUI entrypoint seeds stats from durable storage before the first refresh", () => {
+  assert.match(tui, /context\.storage\.store<CacheState>\(CACHE_KEY/)
+  assert.match(tui, /createCache\(/)
+
+  const seed = tui.indexOf("cache.seed()")
+  const refresh = tui.indexOf("refresher.refresh()")
+  assert.ok(seed >= 0, "the cache must be seeded")
+  assert.ok(refresh >= 0, "the first refresh must run")
+  assert.ok(seed < refresh, "the seed must run before the first refresh")
+})
+
+test("the TUI entrypoint saves stats only on a successful read", () => {
+  assert.match(tui, /onValue:[\s\S]*cache\.save\(value\)/)
+  assert.ok(!/onError:[\s\S]*cache\.save/.test(tui), "a failed read must not save")
+})

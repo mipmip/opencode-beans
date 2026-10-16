@@ -19,6 +19,10 @@ The section refreshes after every assistant turn and on a fallback timer. When
 `.beans/` is missing or `beans` fails it shows a muted `unavailable` line
 instead of crashing.
 
+The last counts are cached per project, so a project that has been read before
+paints its counts immediately on startup. The full breakdown, including the
+per-type split, opens in a session panel from a command bound to `<leader>d`.
+
 ## Prerequisites
 
 `beans`, `openspec` and `jj` must be on `PATH`. Everything else comes from the
@@ -75,7 +79,7 @@ nix build
 ```
 
 The plugin files are then at `result/plugins/beans-stats/` (`index.ts`,
-`tui.tsx`, `beans.ts`, `layout.ts`, `refresh.ts`, `setup.ts`).
+`tui.tsx`, `beans.ts`, `cache.ts`, `layout.ts`, `refresh.ts`, `setup.ts`).
 
 ## How work is organised
 

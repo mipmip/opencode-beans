@@ -4,6 +4,7 @@ import { bars, statusRows, summaryLines, totalLabel, typeRows, type Stats } from
 import { PANEL_NAME, createDisposables, panelCommand, registerSidebar } from "./setup.ts"
 import { loadStats } from "./beans.ts"
 import { createRefresher } from "./refresh.ts"
+import { CACHE_KEY, createCache, type CacheState } from "./cache.ts"
 
 function BeansSummary(props: {
   readonly stats: Accessor<Stats | null>
@@ -83,11 +84,30 @@ export default Plugin.define({
     const bag = createDisposables()
     const dir = () => (context.location ?? context.data.location.default()).directory
 
+    const [cacheState, updateCache] = context.storage.store<CacheState>(CACHE_KEY, { initial: {} })
+    const cache = createCache(
+      {
+        read: (directory) => cacheState[directory],
+        write: (directory, value) => {
+          void updateCache((draft) => {
+            draft[directory] = value
+          })
+        },
+      },
+      dir(),
+    )
+
+    const cached = cache.seed()
+    if (cached !== null) {
+      setStats(cached)
+    }
+
     const refresher = createRefresher<Stats>({
       load: (signal) => loadStats(dir(), { signal }),
       onValue: (value) => {
         setStats(value)
         setError(null)
+        cache.save(value)
       },
       onError: () => {
         setStats(null)
