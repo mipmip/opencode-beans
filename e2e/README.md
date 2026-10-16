@@ -3,8 +3,6 @@
 These tests prove the plugin works inside the real OpenCode process, not only in
 isolation. They are the acceptance proof for the PoC.
 
-Run them with:
-
 ```bash
 npm run test:e2e
 ```
@@ -12,26 +10,41 @@ npm run test:e2e
 They are not part of `nix flake check`, because they need a real OpenCode
 install and a terminal.
 
-## What must be proven
+## What is proven
 
 1. The `BEANS` section appears in the sidebar when OpenCode runs in a project
-   that has beans.
-2. The rendered counts match `beans list --json`: the total and every per-status
-   count.
-3. The section refreshes after an assistant turn completes.
-4. When `.beans/` is missing, or when `beans` fails, the section shows a muted
-   "unavailable" line and the TUI keeps running.
+   that has beans (`e2e/beans-sidebar.test.ts`).
+2. The rendered total and every per-status count match `beans list --json`.
+3. The plugin refreshes after an assistant turn. A live model is out of scope
+   for a deterministic test, so the wiring tests in `tests/unit/plugin-wiring`
+   fail if the `session.execution.succeeded` subscription or the refresh timer
+   is removed.
+4. When `.beans/` is missing, the section shows the muted `unavailable` line and
+   the TUI keeps running (`e2e/beans-degraded.test.ts`).
+5. `nix flake check` stays green.
 
-## Approach
+## How the harness works
 
-Each test creates a fixture project in a temporary directory with `beans init`
-and a handful of `beans create` calls, then starts OpenCode against it with a
-private server (`opencode --standalone`). It drives the TUI through a pseudo
-terminal, captures the rendered screen, and asserts on the `BEANS` section.
+Each test creates a temporary fixture project and runs OpenCode against it.
 
-The fixture project is torn down afterwards. Tests never touch the developer's
-own `.beans/`.
+- `helpers/project.ts` makes the fixture: `beans init` and `beans create`, a
+  copy of `.opencode/plugins/beans-stats`, and a `node_modules` symlink so the
+  plugin can resolve `@opencode/plugin` and `solid-js`. The tracker step is
+  skipped for the degraded test.
+- `helpers/env.ts` isolates the run with a temporary `HOME` and temporary
+  `XDG_DATA_HOME`, `XDG_CONFIG_HOME` and `XDG_CACHE_HOME`, so the developer's
+  own beans and OpenCode data are untouched and no global plugins load.
+- `helpers/session.ts` writes a canned session with one user and one assistant
+  message and imports it with `opencode session import --standalone`. This puts
+  the TUI in the session view, where the sidebar lives, without needing a model
+  or network access.
+- `helpers/pty.py` runs `opencode --standalone` inside a pseudo terminal of a
+  fixed size. Node has no built in pseudo terminal, so the helper uses the
+  Python standard library. It is available on the host and in `nix develop`.
+- `helpers/screen.ts` reconstructs the final screen from the captured terminal
+  output, because OpenCode redraws with cursor positioning. Assertions run
+  against the screen and are limited to the sidebar region, located by the
+  `BEANS` header column.
 
-The "Testing and e2e proof" epic owns the concrete harness and decides whether
-to capture the screen through a pty helper or through OpenCode's renderer test
-utilities. The acceptance criteria above are fixed.
+The tests skip cleanly when `opencode`, `python3` or the plugin dependencies are
+missing, so a checkout without an OpenCode install still passes.
