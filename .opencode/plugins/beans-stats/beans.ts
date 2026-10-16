@@ -5,6 +5,30 @@ import type { Stats } from "./layout.ts"
 const run = promisify(execFile)
 const MAX_BUFFER = 8 * 1024 * 1024
 
+export const DEFAULT_TIMEOUT_MS = 5_000
+
+export interface LoadOptions {
+  readonly signal?: AbortSignal
+  readonly timeoutMs?: number
+}
+
+export interface ExecOptions {
+  readonly cwd: string
+  readonly maxBuffer: number
+  readonly timeout: number
+  readonly signal?: AbortSignal
+}
+
+export interface ExecResult {
+  readonly stdout: string
+}
+
+export type ExecFile = (
+  command: string,
+  args: readonly string[],
+  options: ExecOptions,
+) => Promise<ExecResult>
+
 export interface BeanRecord {
   readonly status: string
 }
@@ -47,27 +71,55 @@ export function aggregate(
   }
 }
 
-async function list(dir: string, args: string[]): Promise<BeanRecord[]> {
-  const { stdout } = await run("beans", args, { cwd: dir, maxBuffer: MAX_BUFFER })
-  return parseBeans(stdout)
+export interface BeanReader {
+  loadStats(dir: string, options?: LoadOptions): Promise<Stats>
 }
 
-async function count(dir: string, args: string[]): Promise<number | undefined> {
-  try {
-    return (await list(dir, args)).length
-  } catch {
-    return undefined
+export function createBeanReader(exec: ExecFile): BeanReader {
+  const list = async (
+    dir: string,
+    args: string[],
+    options: LoadOptions,
+  ): Promise<BeanRecord[]> => {
+    const { stdout } = await exec("beans", args, {
+      cwd: dir,
+      maxBuffer: MAX_BUFFER,
+      timeout: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+      ...(options.signal === undefined ? {} : { signal: options.signal }),
+    })
+    return parseBeans(stdout)
+  }
+
+  const count = async (
+    dir: string,
+    args: string[],
+    options: LoadOptions,
+  ): Promise<number | undefined> => {
+    try {
+      return (await list(dir, args, options)).length
+    } catch {
+      return undefined
+    }
+  }
+
+  return {
+    async loadStats(dir: string, options: LoadOptions = {}): Promise<Stats> {
+      let beans: BeanRecord[]
+      try {
+        beans = await list(dir, ["list", "--json"], options)
+      } catch {
+        throw new BeansUnavailableError("beans list --json failed")
+      }
+      const ready = await count(dir, ["list", "--ready", "--json"], options)
+      const blocked = await count(dir, ["list", "--is-blocked", "--json"], options)
+      return aggregate(beans, ready, blocked)
+    },
   }
 }
 
-export async function loadStats(dir: string): Promise<Stats> {
-  let beans: BeanRecord[]
-  try {
-    beans = await list(dir, ["list", "--json"])
-  } catch {
-    throw new BeansUnavailableError("beans list --json failed")
-  }
-  const ready = await count(dir, ["list", "--ready", "--json"])
-  const blocked = await count(dir, ["list", "--is-blocked", "--json"])
-  return aggregate(beans, ready, blocked)
+const defaultExec: ExecFile = async (command, args, options) => {
+  const { stdout } = await run(command, [...args], { ...options })
+  return { stdout }
 }
+
+export const { loadStats } = createBeanReader(defaultExec)

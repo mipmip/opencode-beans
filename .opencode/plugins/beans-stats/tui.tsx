@@ -3,6 +3,7 @@ import { Plugin, usePlugin } from "@opencode/plugin/tui"
 import { bar, statusRows, summaryLines, totalLabel, type Stats } from "./layout.ts"
 import { createDisposables, registerSidebar } from "./setup.ts"
 import { loadStats } from "./beans.ts"
+import { createRefresher } from "./refresh.ts"
 
 interface StatusRow {
   readonly status: string
@@ -59,22 +60,26 @@ export default Plugin.define({
     const bag = createDisposables()
     const dir = () => (context.location ?? context.data.location.default()).directory
 
-    const refresh = async () => {
-      try {
-        setStats(await loadStats(dir()))
+    const refresher = createRefresher<Stats>({
+      load: (signal) => loadStats(dir(), { signal }),
+      onValue: (value) => {
+        setStats(value)
         setError(null)
-      } catch {
+      },
+      onError: () => {
         setStats(null)
         setError("unavailable")
-      }
-    }
+      },
+    })
 
-    void refresh()
+    void refresher.refresh()
 
-    bag.add(context.data.on("session.execution.succeeded", () => void refresh()))
+    bag.add(context.data.on("session.execution.succeeded", () => void refresher.refresh()))
 
-    const timer = setInterval(() => void refresh(), 30_000)
+    const timer = setInterval(() => void refresher.refresh(), 30_000)
     bag.add(() => clearInterval(timer))
+
+    bag.add(refresher.dispose)
 
     bag.add(
       registerSidebar(context, {

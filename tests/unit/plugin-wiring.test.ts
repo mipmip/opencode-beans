@@ -40,5 +40,10 @@ test("the TUI entrypoint refreshes on a turn and on a timer", () => {
 })
 
 test("the TUI entrypoint loads stats from the data module", () => {
-  assert.match(tui, /loadStats\(dir\(\)\)/)
+  assert.match(tui, /loadStats\(dir\(\), \{ signal \}\)/)
+})
+
+test("the TUI entrypoint cancels in-flight work on cleanup", () => {
+  assert.match(tui, /createRefresher/)
+  assert.match(tui, /bag\.add\(refresher\.dispose\)/)
 })
