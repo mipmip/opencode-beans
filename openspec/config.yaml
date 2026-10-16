@@ -1,0 +1,58 @@
+schema: spec-driven
+
+context: |
+  Project: opencode-beans, a project-local OpenCode v2 CLI/TUI plugin that shows
+  Beans issue tracker statistics in the OpenCode sidebar.
+
+  Product goal and the exact target look: see BRIEFING.md. The operating manual
+  for the build is AGENTS.md.
+
+  Tech stack:
+  - Runtime: OpenCode v2 on Node 24. Plugin entrypoints live at
+    .opencode/plugins/beans-stats/index.ts (server) and
+    .opencode/plugins/beans-stats/tui.tsx (TUI).
+  - UI: OpenTUI primitives (box, text) rendered with Solid reactivity
+    (createSignal, For, Show). Theme tokens come from the plugin context.
+  - Data source: the beans CLI, invoked with node:child_process.
+  - Tests: the built in node:test runner, TypeScript through Node type
+    stripping. No test framework dependency.
+  - Build and dev environment: nix flakes, plain nix, no flake-utils.
+
+  Conventions:
+  - One OpenSpec change per epic bean. Name the change after the epic in
+    kebab-case and cite the epic bean id in the proposal.
+  - Every behavior change ships with tests in the same change.
+  - Version control is jj, authored by Pim Snel, with no attribution trailers.
+    Commit after every archive.
+  - Never use OpenCode V1 plugin syntax.
+  - Keep the plugin resilient: never crash the TUI when beans or .beans is
+    missing.
+
+  Testing layers:
+  - Unit (tests/unit): pure logic, no processes and no network.
+  - Integration (tests/integration): the real beans CLI against a temporary
+    fixture project.
+  - E2E (e2e): the real OpenCode process against a fixture project. Proves the
+    sidebar renders, refreshes after a turn, and degrades gracefully.
+
+rules:
+  proposal:
+    - Name the epic bean id and link it to this change.
+    - State the user-visible outcome and the acceptance criteria it must meet.
+  design:
+    - Cover the OpenCode v2 slot and event APIs actually used, and how beans is invoked.
+    - Note the failure modes around missing beans, a missing .beans directory, and slow or hanging beans.
+  tasks:
+    - Every task that changes behavior must be paired with a test task.
+    - Keep tasks small and independently verifiable.
+
+operations:
+  apply:
+    guidance:
+      - Leave the full test suite green before finishing.
+      - Add or update tests in the same change as the behavior they cover.
+  archive:
+    guidance:
+      - Sync the delta specs into the main specs before moving the change.
+      - After archiving, commit code plus the beans and OpenSpec files with jj
+        as Pim Snel.
