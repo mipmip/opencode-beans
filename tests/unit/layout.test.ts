@@ -16,4 +16,5 @@ test("package.json exposes the test scripts", async () => {
   const pkg = JSON.parse(raw) as { scripts: Record<string, string> }
   assert.equal(typeof pkg.scripts.test, "string")
   assert.equal(typeof pkg.scripts["test:e2e"], "string")
+  assert.equal(typeof pkg.scripts.typecheck, "string")
 })

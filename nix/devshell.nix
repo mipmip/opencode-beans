@@ -1,7 +1,7 @@
 {
   mkShell,
   nodejs_24,
-  jj,
+  jujutsu,
   git,
   nixfmt,
 }:
@@ -9,7 +9,7 @@
 mkShell {
   packages = [
     nodejs_24
-    jj
+    jujutsu
     git
     nixfmt
   ];

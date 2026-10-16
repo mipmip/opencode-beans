@@ -6,7 +6,7 @@
     "lib": ["ES2023"],
     "types": ["node"],
     "jsx": "preserve",
-    "jsxImportSource": "solid-js",
+    "jsxImportSource": "@opentui/solid",
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,

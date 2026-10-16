@@ -1,11 +1,11 @@
 ---
 # opencode-beans-mrqa
 title: Project foundation and nix flake
-status: todo
+status: completed
 type: epic
 priority: high
 created_at: 2026-10-16T13:45:30Z
-updated_at: 2026-10-16T13:45:30Z
+updated_at: 2026-10-16T13:55:07Z
 parent: opencode-beans-6tzv
 ---
 
@@ -26,3 +26,18 @@ Definition of done:
 - The OpenSpec change is archived and committed as Pim Snel.
 
 OpenSpec capability: project-foundation.
+
+
+
+## Summary of Changes
+
+Delivered in change project-foundation-and-nix-flake (archived 2026-10-16).
+
+- flake.nix with the four supported systems via nixpkgs.lib.genAttrs, nixpkgs as the only input.
+- nix/package.nix, nix/checks.nix and nix/devshell.nix as single-argument modules for callPackage.
+- devShells.default with Node 24, jujutsu, git and nixfmt. The shell uses jujutsu because nixpkgs jj is an unrelated package.
+- packages.default assembles the beans-stats plugin directory.
+- checks.default runs the node:test suite in a pure sandbox.
+- package.json and tsconfig.json wired to node:test and tsc; jsxImportSource is @opentui/solid.
+- tests/unit/flake.test.ts guards the plain-flake invariants.
+- Main spec openspec/specs/project-foundation/spec.md.

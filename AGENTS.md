@@ -50,7 +50,9 @@ Acceptance criteria for the PoC:
 | Runtime        | OpenCode v2, Node 24                   |
 
 `beans`, `openspec` and `jj` are expected on `PATH`. They are provided by the
-host system, not by the flake. Everything else comes from `nix develop`.
+host system. The dev shell additionally ships `jujutsu` (the `jj` binary) plus
+the git, nixfmt and Node 24 toolchain. Because nixpkgs also has an unrelated
+package named `jj`, always take `jj` from the host or from `jujutsu`.
 
 ## 3. Version control with jj
 
