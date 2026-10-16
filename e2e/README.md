@@ -15,10 +15,10 @@ install and a terminal.
 1. The `BEANS` section appears in the sidebar when OpenCode runs in a project
    that has beans (`e2e/beans-sidebar.test.ts`).
 2. The rendered total and every per-status count match `beans list --json`.
-3. The plugin refreshes after an assistant turn. A live model is out of scope
-   for a deterministic test, so the wiring tests in `tests/unit/plugin-wiring`
-   fail if the `session.execution.succeeded` subscription or the refresh timer
-   is removed.
+3. The plugin refreshes after a real assistant turn. The case starts a turn,
+   adds a bean while the turn is held open, and asserts the rendered counts
+   change (`e2e/beans-live-refresh.test.ts`). The wiring tests in
+   `tests/unit/plugin-wiring` still cover the subscription and the timer.
 4. When `.beans/` is missing, the section shows the muted `unavailable` line and
    the TUI keeps running (`e2e/beans-degraded.test.ts`).
 5. `nix flake check` stays green.
@@ -38,6 +38,11 @@ Each test creates a temporary fixture project and runs OpenCode against it.
   message and imports it with `opencode session import --standalone`. This puts
   the TUI in the session view, where the sidebar lives, without needing a model
   or network access.
+- `helpers/mock-provider.ts` serves a local OpenAI compatible provider for the
+  live refresh case. It needs no package install and no network, and it holds
+  the assistant message until the case releases it so the order of the turn and
+  the tracker change is deterministic. The fixture writes the matching provider
+  config into `opencode.jsonc` (`helpers/project.ts`).
 - `helpers/pty.py` runs `opencode --standalone` inside a pseudo terminal of a
   fixed size. Node has no built in pseudo terminal, so the helper uses the
   Python standard library. It is available on the host and in `nix develop`.
@@ -47,4 +52,5 @@ Each test creates a temporary fixture project and runs OpenCode against it.
   `BEANS` header column.
 
 The tests skip cleanly when `opencode`, `python3` or the plugin dependencies are
-missing, so a checkout without an OpenCode install still passes.
+missing, so a checkout without an OpenCode install still passes. The live
+refresh case also skips when its local provider cannot start.

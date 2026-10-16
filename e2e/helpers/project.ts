@@ -1,9 +1,10 @@
 import { execFile } from "node:child_process"
-import { cp, mkdir, mkdtemp, rm, symlink } from "node:fs/promises"
+import { cp, mkdir, mkdtemp, rm, symlink, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { promisify } from "node:util"
 import { createIsolatedDirs, isolatedEnv, repoRoot, type IsolatedDirs } from "./env.ts"
+import { MOCK_API_KEY_ENV, MOCK_PROVIDER_ID } from "./mock-provider.ts"
 
 const run = promisify(execFile)
 
@@ -22,6 +23,7 @@ export type E2eProject = {
 export type E2eProjectOptions = {
   tracker?: boolean
   beans?: Array<{ title: string; status?: string }>
+  provider?: { baseURL: string; model: string }
 }
 
 const defaultBeans = [
@@ -47,11 +49,37 @@ export async function createE2eProject(options: E2eProjectOptions = {}): Promise
   })
   await symlink(join(repoRoot, "node_modules"), join(dir, "node_modules"), "dir")
 
+  const env = isolatedEnv(dirs)
+  if (options.provider) {
+    env[MOCK_API_KEY_ENV] = "e2e"
+    await writeFile(
+      join(dir, "opencode.jsonc"),
+      JSON.stringify(providerConfig(options.provider.baseURL, options.provider.model), null, 2),
+    )
+  }
+
   return {
     dir,
     dirs,
-    env: isolatedEnv(dirs),
+    env,
     dispose: () => rm(dir, { recursive: true, force: true }),
+  }
+}
+
+function providerConfig(baseURL: string, model: string): Record<string, unknown> {
+  const modelID = model.split("/")[1] ?? model
+  return {
+    $schema: "https://opencode.ai/config.json",
+    model,
+    providers: {
+      [MOCK_PROVIDER_ID]: {
+        name: "End to end provider",
+        env: [MOCK_API_KEY_ENV],
+        package: "@opencode/ai/providers/openai-compatible",
+        settings: { baseURL },
+        models: { [modelID]: { name: "End to end model", capabilities: { tools: false } } },
+      },
+    },
   }
 }
 
