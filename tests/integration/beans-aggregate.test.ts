@@ -10,6 +10,11 @@ const byStatus = (
   right: { status: string },
 ): number => left.status.localeCompare(right.status)
 
+const byType = (
+  left: { type: string },
+  right: { type: string },
+): number => left.type.localeCompare(right.type)
+
 test("aggregated stats match beans list --json", { skip: !available }, async () => {
   const project = await createProject()
   try {
@@ -29,6 +34,11 @@ test("aggregated stats match beans list --json", { skip: !available }, async () 
     )
     assert.equal(stats.byStatus.find((entry) => entry.status === "todo")?.count, 2)
     assert.equal(stats.byStatus.find((entry) => entry.status === "in-progress")?.count, 1)
+    assert.deepEqual(
+      [...(stats.byType ?? [])].sort(byType),
+      [...(aggregate(beans).byType ?? [])].sort(byType),
+    )
+    assert.ok((stats.byType ?? []).length > 0)
   } finally {
     await project.dispose()
   }

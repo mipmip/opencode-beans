@@ -20,3 +20,15 @@ test("a bean without a status is a clear failure", () => {
   assert.throws(() => parseBeans('[{"title":"x"}]'), BeansUnavailableError)
   assert.throws(() => parseBeans("[[1,2]]"), BeansUnavailableError)
 })
+
+test("a bean type is carried when present", () => {
+  const beans = parseBeans('[{"status":"todo","type":"epic"},{"status":"todo"}]')
+
+  assert.deepEqual(beans, [{ status: "todo", type: "epic" }, { status: "todo" }])
+})
+
+test("a bean without a type omits the key", () => {
+  const beans = parseBeans('[{"status":"todo","type":7}]')
+
+  assert.ok(!("type" in (beans[0] ?? {})))
+})

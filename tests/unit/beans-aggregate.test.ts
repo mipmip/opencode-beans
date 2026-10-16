@@ -43,3 +43,26 @@ test("an unknown ready or blocked count is omitted", () => {
   assert.ok(!("ready" in stats))
   assert.ok(!("blocked" in stats))
 })
+
+test("beans are counted by type", () => {
+  const stats = aggregate([
+    { status: "todo", type: "task" },
+    { status: "todo", type: "task" },
+    { status: "draft", type: "epic" },
+  ])
+
+  assert.deepEqual(
+    [...(stats.byType ?? [])].sort((left, right) => left.type.localeCompare(right.type)),
+    [
+      { type: "epic", count: 1 },
+      { type: "task", count: 2 },
+    ],
+  )
+})
+
+test("a bean without a type is left out of the per-type counts", () => {
+  const stats = aggregate([{ status: "todo" }, { status: "todo", type: "bug" }])
+
+  assert.equal(stats.total, 2)
+  assert.deepEqual(stats.byType, [{ type: "bug", count: 1 }])
+})

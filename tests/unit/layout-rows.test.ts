@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { bar, statusRows, summaryLines, totalLabel, type Stats } from "../../.opencode/plugins/beans-stats/layout.ts"
+import { bar, bars, statusRows, summaryLines, totalLabel, typeRows, type Stats } from "../../.opencode/plugins/beans-stats/layout.ts"
 
 const stats: Stats = {
   total: 29,
@@ -63,4 +63,41 @@ test("ready and blocked lines follow the status rows", () => {
 test("an absent count is omitted from the summary", () => {
   assert.deepEqual(summaryLines(stats), [])
   assert.deepEqual(summaryLines({ ...stats, ready: 0 }), [{ label: "ready", count: 0 }])
+})
+
+test("type rows are ordered by descending count then name", () => {
+  const typed: Stats = {
+    ...stats,
+    byType: [
+      { type: "bug", count: 2 },
+      { type: "task", count: 18 },
+      { type: "epic", count: 2 },
+    ],
+  }
+
+  assert.deepEqual(
+    typeRows(typed).map((row) => row.type),
+    ["task", "bug", "epic"],
+  )
+})
+
+test("a stats without types yields no type rows", () => {
+  assert.deepEqual(typeRows(stats), [])
+})
+
+test("bars scale against the largest count in the group", () => {
+  const scaled = bars([
+    { label: "big", count: 18 },
+    { label: "small", count: 6 },
+  ])
+
+  assert.deepEqual(
+    scaled.map((row) => row.bar),
+    ["████", "█▌"],
+  )
+  assert.equal(scaled[0]?.label, "big")
+})
+
+test("bars of an empty group are empty", () => {
+  assert.deepEqual(bars([]), [])
 })

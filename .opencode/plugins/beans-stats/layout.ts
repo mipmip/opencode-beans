@@ -3,9 +3,15 @@ export interface StatusCount {
   readonly count: number
 }
 
+export interface TypeCount {
+  readonly type: string
+  readonly count: number
+}
+
 export interface Stats {
   readonly total: number
   readonly byStatus: readonly StatusCount[]
+  readonly byType?: readonly TypeCount[]
   readonly ready?: number
   readonly blocked?: number
 }
@@ -23,6 +29,20 @@ export function statusRows(stats: Stats): StatusCount[] {
   return [...stats.byStatus].sort(
     (left, right) => right.count - left.count || left.status.localeCompare(right.status),
   )
+}
+
+export function typeRows(stats: Stats): TypeCount[] {
+  return [...(stats.byType ?? [])].sort(
+    (left, right) => right.count - left.count || left.type.localeCompare(right.type),
+  )
+}
+
+export function bars<T extends { readonly count: number }>(
+  entries: readonly T[],
+  width: number = BAR_WIDTH,
+): Array<T & { readonly bar: string }> {
+  const max = entries.reduce((largest, entry) => Math.max(largest, entry.count), 0)
+  return entries.map((entry) => ({ ...entry, bar: bar(entry.count, max, width) }))
 }
 
 export function bar(count: number, max: number, width: number = BAR_WIDTH): string {

@@ -31,6 +31,7 @@ export type ExecFile = (
 
 export interface BeanRecord {
   readonly status: string
+  readonly type?: string
 }
 
 export class BeansUnavailableError extends Error {}
@@ -46,11 +47,13 @@ export function parseBeans(raw: string): BeanRecord[] {
     throw new BeansUnavailableError("beans list --json did not return an array")
   }
   return parsed.map((entry) => {
-    const status = (entry as { status?: unknown } | null)?.status
+    const record = entry as { status?: unknown; type?: unknown } | null
+    const status = record?.status
     if (typeof status !== "string") {
       throw new BeansUnavailableError("a bean is missing its status")
     }
-    return { status }
+    const type = record?.type
+    return typeof type === "string" ? { status, type } : { status }
   })
 }
 
@@ -60,12 +63,17 @@ export function aggregate(
   blocked?: number,
 ): Stats {
   const counts = new Map<string, number>()
+  const types = new Map<string, number>()
   for (const bean of beans) {
     counts.set(bean.status, (counts.get(bean.status) ?? 0) + 1)
+    if (bean.type !== undefined) {
+      types.set(bean.type, (types.get(bean.type) ?? 0) + 1)
+    }
   }
   return {
     total: beans.length,
     byStatus: [...counts].map(([status, count]) => ({ status, count })),
+    byType: [...types].map(([type, count]) => ({ type, count })),
     ...(ready === undefined ? {} : { ready }),
     ...(blocked === undefined ? {} : { blocked }),
   }

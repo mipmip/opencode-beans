@@ -21,7 +21,11 @@ test("the empty and error states share a muted placeholder", () => {
 })
 
 test("status rows come from the layout helpers", () => {
-  assert.match(tui, /toRows\(stats\(\)\)/)
+  assert.match(tui, /bars\(statusRows\(stats\(\)\)\)/)
+})
+
+test("type rows come from the layout helpers", () => {
+  assert.match(tui, /bars\(typeRows\(stats\(\)\)\)/)
 })
 
 test("the summary lines come from the layout helpers", () => {

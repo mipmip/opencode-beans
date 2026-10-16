@@ -34,6 +34,17 @@ test("the TUI entrypoint registers cleanup", () => {
   assert.match(tui, /registerSidebar\(context/)
 })
 
+test("the TUI entrypoint claims the session panel slot behind the panel name", () => {
+  assert.match(tui, /append: "session\.panel"/)
+  assert.match(tui, /input\.name === PANEL_NAME/)
+})
+
+test("the TUI entrypoint opens the panel from a keymap command", () => {
+  assert.match(tui, /context\.keymap\.layer\(/)
+  assert.match(tui, /panelCommand\(/)
+  assert.match(tui, /context\.ui\.panel\.open\(/)
+})
+
 test("the TUI entrypoint refreshes on a turn and on a timer", () => {
   assert.match(tui, /session\.execution\.succeeded/)
   assert.match(tui, /setInterval\(/)
