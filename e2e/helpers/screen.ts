@@ -127,3 +127,24 @@ export function sidebarRegion(lines: string[], header = "BEANS"): string[] {
   if (column < 0) return []
   return lines.map((line) => line.slice(column))
 }
+
+const BAR_ROW = /^(\S+)(\s+)(\d+)(\s+)([█▌]+)$/
+
+export function columnLayout(lines: readonly string[]): { count: number[]; bar: number[] } {
+  const count: number[] = []
+  const bar: number[] = []
+  for (const line of lines) {
+    const match = BAR_ROW.exec(line)
+    if (match === null) continue
+    const countEnd = match[1]!.length + match[2]!.length + match[3]!.length
+    count.push(countEnd)
+    bar.push(countEnd + match[4]!.length)
+  }
+  return { count, bar }
+}
+
+export function isColumnAligned(lines: readonly string[]): boolean {
+  const { count, bar } = columnLayout(lines)
+  if (count.length === 0) return false
+  return new Set(count).size === 1 && new Set(bar).size === 1
+}

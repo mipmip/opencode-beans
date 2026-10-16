@@ -3,7 +3,7 @@ import { test } from "node:test"
 import { checkPrerequisites, skipReason } from "./helpers/env.ts"
 import { createE2eProject, listBeans } from "./helpers/project.ts"
 import { capturePty } from "./helpers/pty.ts"
-import { renderScreen, sidebarRegion } from "./helpers/screen.ts"
+import { isColumnAligned, renderScreen, sidebarRegion } from "./helpers/screen.ts"
 import { importSession, newSessionId } from "./helpers/session.ts"
 
 const skip = skipReason(await checkPrerequisites())
@@ -42,8 +42,16 @@ test("the sidebar shows the total and per-status counts from beans", { skip }, a
     assert.ok(beans.length > 0, "the fixture should contain beans")
     assert.match(text, new RegExp(`\\b${beans.length} total\\b`), `expected the total in:\n${text}`)
     for (const [status, count] of statusCounts(beans)) {
-      assert.match(text, new RegExp(`${status} ${count}`), `expected "${status} ${count}" in:\n${text}`)
+      assert.match(text, new RegExp(`^${status}\\s+${count}\\b`, "m"), `expected "${status} ${count}" in:\n${text}`)
     }
+    assert.ok(isColumnAligned(sidebar), `expected the sidebar rows to be aligned:\n${text}`)
+    const totalIndex = sidebar.findIndex((line) => /^\d+ total\b/.test(line))
+    assert.ok(totalIndex >= 0, `expected the total line in:\n${text}`)
+    assert.equal(
+      sidebar[totalIndex + 1]?.slice(0, 24).trim(),
+      "",
+      `expected a blank line after the total in:\n${text}`,
+    )
   } finally {
     await project.dispose()
   }

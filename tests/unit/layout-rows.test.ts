@@ -1,6 +1,16 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { bar, bars, statusRows, summaryLines, totalLabel, typeRows, type Stats } from "../../.opencode/plugins/beans-stats/layout.ts"
+import {
+  bar,
+  bars,
+  layoutBreakdown,
+  layoutSection,
+  statusRows,
+  summaryLines,
+  totalLabel,
+  typeRows,
+  type Stats,
+} from "../../.opencode/plugins/beans-stats/layout.ts"
 
 const stats: Stats = {
   total: 29,
@@ -100,4 +110,89 @@ test("bars scale against the largest count in the group", () => {
 
 test("bars of an empty group are empty", () => {
   assert.deepEqual(bars([]), [])
+})
+
+test("the documented example renders as aligned columns", () => {
+  const documented: Stats = {
+    total: 42,
+    byStatus: [
+      { status: "todo", count: 18 },
+      { status: "in-progress", count: 6 },
+      { status: "completed", count: 2 },
+    ],
+    ready: 11,
+    blocked: 3,
+  }
+
+  assert.deepEqual(layoutSection(documented).body, [
+    "",
+    "todo           18  ████",
+    "in-progress     6  █▌",
+    "completed       2  ▌",
+    "",
+    "ready          11",
+    "blocked         3",
+  ])
+})
+
+test("the total line reads from the layout value", () => {
+  assert.equal(layoutSection(stats).total, "29 total")
+})
+
+test("a blank line separates the total from the status rows", () => {
+  const body = layoutSection(stats).body
+
+  assert.equal(body[0], "")
+  assert.match(body[1] ?? "", /^todo/)
+})
+
+test("a blank line separates the summary from the status rows", () => {
+  const body = layoutSection({ ...stats, ready: 11, blocked: 3 }).body
+
+  assert.deepEqual(
+    body.slice(4, 7).map((line) => line.replace(/\s+/g, " ")),
+    ["", "ready 11", "blocked 3"],
+  )
+})
+
+test("a stats without rows renders an empty body", () => {
+  assert.deepEqual(layoutSection({ total: 0, byStatus: [] }), { total: "0 total", body: [] })
+})
+
+test("wider labels and counts widen the columns", () => {
+  const wide: Stats = { total: 1000, byStatus: [{ status: "waiting-for-merge", count: 1000 }] }
+
+  assert.deepEqual(layoutSection(wide).body, ["", "waiting-for-merge    1000  ████"])
+})
+
+test("every bar starts in the same column", () => {
+  const typed: Stats = {
+    total: 42,
+    byStatus: [
+      { status: "todo", count: 18 },
+      { status: "in-progress", count: 6 },
+    ],
+    byType: [
+      { type: "task", count: 18 },
+      { type: "bug", count: 6 },
+    ],
+    ready: 11,
+    blocked: 3,
+  }
+
+  const withBar = layoutBreakdown(typed).body.filter((line) => /[█▌]/.test(line))
+  const columns = new Set(withBar.map((line) => line.search(/[█▌]/)))
+
+  assert.equal(withBar.length, 4)
+  assert.deepEqual([...columns], [19])
+})
+
+test("the breakdown adds the type rows after another blank line", () => {
+  const typed: Stats = {
+    total: 2,
+    byStatus: [{ status: "todo", count: 2 }],
+    byType: [{ type: "bug", count: 2 }],
+  }
+
+  assert.deepEqual(layoutBreakdown(typed).body, ["", "todo    2  ████", "", "bug     2  ████"])
 })

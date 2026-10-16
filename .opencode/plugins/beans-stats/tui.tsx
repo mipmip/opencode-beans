@@ -1,14 +1,20 @@
-import { For, Show, createSignal, type Accessor } from "solid-js"
+import { For, Index, Show, createSignal, type Accessor } from "solid-js"
 import { Plugin, usePlugin } from "@opencode/plugin/tui"
-import { bars, statusRows, summaryLines, totalLabel, typeRows, type Stats } from "./layout.ts"
+import {
+  layoutBreakdown,
+  layoutSection,
+  type SectionLayout,
+  type Stats,
+} from "./layout.ts"
 import { PANEL_NAME, createDisposables, panelCommand, registerSidebar } from "./setup.ts"
 import { loadStats } from "./beans.ts"
 import { createRefresher } from "./refresh.ts"
 import { CACHE_KEY, createCache, type CacheState } from "./cache.ts"
 
-function BeansSummary(props: {
+function BeansLines(props: {
   readonly stats: Accessor<Stats | null>
   readonly error: Accessor<string | null>
+  readonly layout: (stats: Stats) => SectionLayout
 }) {
   const context = usePlugin()
   return (
@@ -18,21 +24,10 @@ function BeansSummary(props: {
     >
       {(stats: Accessor<Stats>) => (
         <>
-          <text fg={context.theme.text.base}>{totalLabel(stats())}</text>
-          <For each={bars(statusRows(stats()))}>
-            {(row) => (
-              <text fg={context.theme.text.muted}>
-                {row.status} {row.count} {row.bar}
-              </text>
-            )}
-          </For>
-          <For each={summaryLines(stats())}>
-            {(line) => (
-              <text fg={context.theme.text.muted}>
-                {line.label} {line.count}
-              </text>
-            )}
-          </For>
+          <text fg={context.theme.text.base}>{props.layout(stats()).total}</text>
+          <Index each={props.layout(stats()).body}>
+            {(line) => <text fg={context.theme.text.muted}>{line()}</text>}
+          </Index>
         </>
       )}
     </Show>
@@ -47,7 +42,7 @@ function BeansStats(props: {
   return (
     <box flexDirection="column" gap={0}>
       <text fg={context.theme.text.muted}>BEANS</text>
-      <BeansSummary stats={props.stats} error={props.error} />
+      <BeansLines stats={props.stats} error={props.error} layout={layoutSection} />
     </box>
   )
 }
@@ -60,18 +55,7 @@ function BeansBreakdown(props: {
   return (
     <box flexDirection="column" gap={0}>
       <text fg={context.theme.text.muted}>BEANS</text>
-      <BeansSummary stats={props.stats} error={props.error} />
-      <Show when={props.stats()}>
-        {(stats: Accessor<Stats>) => (
-          <For each={bars(typeRows(stats()))}>
-            {(row) => (
-              <text fg={context.theme.text.muted}>
-                {row.type} {row.count} {row.bar}
-              </text>
-            )}
-          </For>
-        )}
-      </Show>
+      <BeansLines stats={props.stats} error={props.error} layout={layoutBreakdown} />
     </box>
   )
 }

@@ -20,16 +20,16 @@ test("the empty and error states share a muted placeholder", () => {
   assert.match(tui, /props\.error\(\) \?\? "loading"/)
 })
 
-test("status rows come from the layout helpers", () => {
-  assert.match(tui, /bars\(statusRows\(stats\(\)\)\)/)
+test("the sidebar renders the section layout helper", () => {
+  assert.match(tui, /layout=\{layoutSection\}/)
 })
 
-test("type rows come from the layout helpers", () => {
-  assert.match(tui, /bars\(typeRows\(stats\(\)\)\)/)
+test("the panel renders the breakdown layout helper", () => {
+  assert.match(tui, /layout=\{layoutBreakdown\}/)
 })
 
-test("the summary lines come from the layout helpers", () => {
-  assert.match(tui, /summaryLines\(stats\(\)\)/)
+test("the rendered lines come from the layout value", () => {
+  assert.match(tui, /props\.layout\(stats\(\)\)\.body/)
 })
 
 test("the failure state reads unavailable", () => {

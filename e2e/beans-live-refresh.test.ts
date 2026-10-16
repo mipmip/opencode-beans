@@ -6,7 +6,7 @@ import { checkPrerequisites, skipReason } from "./helpers/env.ts"
 import { MOCK_ASSISTANT_TEXT, startMockProvider } from "./helpers/mock-provider.ts"
 import { createE2eProject, listBeans } from "./helpers/project.ts"
 import { capturePty } from "./helpers/pty.ts"
-import { renderScreen, sidebarRegion } from "./helpers/screen.ts"
+import { isColumnAligned, renderScreen, sidebarRegion } from "./helpers/screen.ts"
 
 const run = promisify(execFile)
 
@@ -56,7 +56,8 @@ test("the sidebar refreshes after a real assistant turn", { skip }, async (t) =>
       new RegExp(`\\b${after.length} total\\b`),
       `expected the refreshed total ${after.length} in:\n${text}`,
     )
-    assert.match(text, /todo 2/, `expected the refreshed todo count in:\n${text}`)
+    assert.match(text, /^todo\s+2\s/m, `expected the refreshed todo count in:\n${text}`)
+    assert.ok(isColumnAligned(sidebar), `expected the refreshed rows to stay aligned:\n${text}`)
   } finally {
     await provider.close()
     await project.dispose()
