@@ -1,7 +1,8 @@
 import { For, Show, createSignal, type Accessor } from "solid-js"
 import { Plugin, usePlugin } from "@opencode/plugin/tui"
-import { bar, statusRows, totalLabel, type Stats } from "./layout.ts"
+import { bar, statusRows, summaryLines, totalLabel, type Stats } from "./layout.ts"
 import { createDisposables, registerSidebar } from "./setup.ts"
+import { loadStats } from "./beans.ts"
 
 interface StatusRow {
   readonly status: string
@@ -36,6 +37,13 @@ function BeansStats(props: {
                 </text>
               )}
             </For>
+            <For each={summaryLines(stats())}>
+              {(line) => (
+                <text fg={context.theme.text.muted}>
+                  {line.label} {line.count}
+                </text>
+              )}
+            </For>
           </>
         )}
       </Show>
@@ -46,9 +54,27 @@ function BeansStats(props: {
 export default Plugin.define({
   id: "beans.stats",
   setup(context) {
-    const [stats] = createSignal<Stats | null>(null)
-    const [error] = createSignal<string | null>(null)
+    const [stats, setStats] = createSignal<Stats | null>(null)
+    const [error, setError] = createSignal<string | null>(null)
     const bag = createDisposables()
+    const dir = () => (context.location ?? context.data.location.default()).directory
+
+    const refresh = async () => {
+      try {
+        setStats(await loadStats(dir()))
+        setError(null)
+      } catch {
+        setStats(null)
+        setError("unavailable")
+      }
+    }
+
+    void refresh()
+
+    bag.add(context.data.on("session.execution.succeeded", () => void refresh()))
+
+    const timer = setInterval(() => void refresh(), 30_000)
+    bag.add(() => clearInterval(timer))
 
     bag.add(
       registerSidebar(context, {

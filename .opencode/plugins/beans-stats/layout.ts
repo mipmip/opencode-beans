@@ -6,6 +6,13 @@ export interface StatusCount {
 export interface Stats {
   readonly total: number
   readonly byStatus: readonly StatusCount[]
+  readonly ready?: number
+  readonly blocked?: number
+}
+
+export interface SummaryLine {
+  readonly label: string
+  readonly count: number
 }
 
 const BAR_WIDTH = 4
@@ -30,4 +37,15 @@ export function bar(count: number, max: number, width: number = BAR_WIDTH): stri
 
 export function totalLabel(stats: Stats): string {
   return `${stats.total} total`
+}
+
+export function summaryLines(stats: Stats): SummaryLine[] {
+  const lines: SummaryLine[] = []
+  if (stats.ready !== undefined) {
+    lines.push({ label: "ready", count: stats.ready })
+  }
+  if (stats.blocked !== undefined) {
+    lines.push({ label: "blocked", count: stats.blocked })
+  }
+  return lines
 }

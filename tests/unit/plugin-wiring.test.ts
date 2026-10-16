@@ -33,3 +33,12 @@ test("the TUI entrypoint registers cleanup", () => {
   assert.match(tui, /bag\.dispose\(\)/)
   assert.match(tui, /registerSidebar\(context/)
 })
+
+test("the TUI entrypoint refreshes on a turn and on a timer", () => {
+  assert.match(tui, /session\.execution\.succeeded/)
+  assert.match(tui, /setInterval\(/)
+})
+
+test("the TUI entrypoint loads stats from the data module", () => {
+  assert.match(tui, /loadStats\(dir\(\)\)/)
+})

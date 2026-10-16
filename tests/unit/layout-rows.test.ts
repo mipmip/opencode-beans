@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { bar, statusRows, totalLabel, type Stats } from "../../.opencode/plugins/beans-stats/layout.ts"
+import { bar, statusRows, summaryLines, totalLabel, type Stats } from "../../.opencode/plugins/beans-stats/layout.ts"
 
 const stats: Stats = {
   total: 29,
@@ -49,4 +49,18 @@ test("a zero or unknown maximum yields no bar", () => {
 
 test("the total label reads clearly", () => {
   assert.equal(totalLabel(stats), "29 total")
+})
+
+test("ready and blocked lines follow the status rows", () => {
+  const withCounts: Stats = { ...stats, ready: 11, blocked: 3 }
+
+  assert.deepEqual(summaryLines(withCounts), [
+    { label: "ready", count: 11 },
+    { label: "blocked", count: 3 },
+  ])
+})
+
+test("an absent count is omitted from the summary", () => {
+  assert.deepEqual(summaryLines(stats), [])
+  assert.deepEqual(summaryLines({ ...stats, ready: 0 }), [{ label: "ready", count: 0 }])
 })
