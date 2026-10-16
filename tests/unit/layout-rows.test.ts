@@ -1,0 +1,52 @@
+import assert from "node:assert/strict"
+import { test } from "node:test"
+import { bar, statusRows, totalLabel, type Stats } from "../../.opencode/plugins/beans-stats/layout.ts"
+
+const stats: Stats = {
+  total: 29,
+  byStatus: [
+    { status: "draft", count: 4 },
+    { status: "todo", count: 18 },
+    { status: "processing", count: 6 },
+  ],
+}
+
+test("rows are ordered by descending count then status name", () => {
+  assert.deepEqual(
+    statusRows(stats).map((row) => row.status),
+    ["todo", "processing", "draft"],
+  )
+})
+
+test("rows break count ties by status name", () => {
+  const tied: Stats = {
+    total: 4,
+    byStatus: [
+      { status: "beta", count: 2 },
+      { status: "alpha", count: 2 },
+    ],
+  }
+  assert.deepEqual(
+    statusRows(tied).map((row) => row.status),
+    ["alpha", "beta"],
+  )
+})
+
+test("the largest count produces a full bar", () => {
+  assert.equal(bar(18, 18), "████")
+})
+
+test("smaller counts produce a proportionally shorter bar", () => {
+  assert.equal(bar(6, 18), "█▌")
+  assert.equal(bar(4, 18), "█")
+  assert.ok(bar(2, 18).length < bar(6, 18).length)
+})
+
+test("a zero or unknown maximum yields no bar", () => {
+  assert.equal(bar(0, 0), "")
+  assert.equal(bar(3, 0), "")
+})
+
+test("the total label reads clearly", () => {
+  assert.equal(totalLabel(stats), "29 total")
+})
