@@ -1,18 +1,44 @@
 {
   "name": "opencode-beans",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
   "description": "Beans stats sidebar plugin for OpenCode v2",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mipmip/opencode-beans.git"
+  },
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "beans"
+  ],
+  "exports": {
+    ".": "./.opencode/plugins/beans-stats/index.ts",
+    "./tui": "./.opencode/plugins/beans-stats/tui.tsx"
+  },
+  "files": [
+    ".opencode/plugins/beans-stats"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "test": "node --test \"tests/**/*.test.ts\"",
     "test:e2e": "node --test \"e2e/**/*.test.ts\"",
     "typecheck": "tsc --noEmit"
   },
+  "dependencies": {
+    "@opencode/plugin": "^2.0.31"
+  },
+  "peerDependencies": {
+    "@opentui/core": ">=0.6.6",
+    "@opentui/solid": ">=0.6.6",
+    "solid-js": ">=1.9.0"
+  },
   "devDependencies": {
-    "@opencode/plugin": "^2.0.31",
-    "@opentui/core": ">=0.5.8",
-    "@opentui/solid": ">=0.5.8",
+    "@opentui/core": ">=0.6.6",
+    "@opentui/solid": ">=0.6.6",
     "@types/node": "^24",
     "solid-js": "^1.9.0",
     "typescript": "^5"
